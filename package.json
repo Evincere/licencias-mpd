@@ -1,0 +1,39 @@
+{
+  "name": "sistema-licencias-mpd",
+  "version": "1.0.0",
+  "description": "Sistema integral de gestión de licencias para MPD Mendoza",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "api-layer"
+  ],
+  "scripts": {
+    "dev": "concurrently \"pnpm run dev:backend\" \"pnpm run dev:api\" \"pnpm run dev:frontend\"",
+    "dev:backend": "cd backend && pnpm dev",
+    "dev:api": "cd api-layer && pnpm dev",
+    "dev:frontend": "cd frontend && pnpm dev",
+    "build": "pnpm run build:backend && pnpm run build:api && pnpm run build:frontend",
+    "build:backend": "cd backend && pnpm build",
+    "build:api": "cd api-layer && pnpm build",
+    "build:frontend": "cd frontend && pnpm build",
+    "start": "concurrently \"pnpm run start:backend\" \"pnpm run start:api\" \"pnpm run start:frontend\"",
+    "start:backend": "cd backend && pnpm start",
+    "start:api": "cd api-layer && pnpm start",
+    "start:frontend": "cd frontend && pnpm start",
+    "test": "pnpm run test:backend && pnpm run test:api && pnpm run test:frontend",
+    "test:backend": "cd backend && pnpm test",
+    "test:api": "cd api-layer && pnpm test",
+    "test:frontend": "cd frontend && pnpm test",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "setup": "pnpm install && pnpm run setup:backend && pnpm run setup:api",
+    "setup:backend": "cd backend && pnpm run setup",
+    "setup:api": "cd api-layer && pnpm install && node scripts/migrate.js run",
+    "migrate": "cd api-layer && node scripts/migrate.js run",
+    "migrate:create": "cd api-layer && node scripts/migrate.js create"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

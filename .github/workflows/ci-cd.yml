@@ -1,0 +1,369 @@
+# ================================
+# CI/CD Pipeline
+# Sistema de Licencias MPD
+# ================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ published ]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: 'latest'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ================================
+  # TESTING STAGE
+  # ================================
+  test:
+    name: 🧪 Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: 📦 Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: 🗄️ Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+            
+      - name: 📦 Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+        
+      - name: 🔍 Type check
+        working-directory: ./frontend
+        run: pnpm type-check
+        
+      - name: 🧹 Lint
+        working-directory: ./frontend
+        run: pnpm lint
+        
+      - name: 🧪 Run unit tests
+        if: matrix.test-type == 'unit'
+        working-directory: ./frontend
+        run: pnpm test:unit --coverage
+        
+      - name: 🔗 Run integration tests
+        if: matrix.test-type == 'integration'
+        working-directory: ./frontend
+        run: pnpm test:integration
+        
+      - name: 🎭 Run E2E tests
+        if: matrix.test-type == 'e2e'
+        working-directory: ./frontend
+        run: |
+          pnpm build
+          pnpm test:e2e
+          
+      - name: 📊 Upload coverage reports
+        if: matrix.test-type == 'unit'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
+          
+      - name: 📊 Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ matrix.test-type }}
+          path: |
+            frontend/test-results/
+            frontend/coverage/
+
+  # ================================
+  # SECURITY SCAN
+  # ================================
+  security:
+    name: 🔒 Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔍 Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: 📊 Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+          
+      - name: 🔍 Run npm audit
+        working-directory: ./frontend
+        run: |
+          npm audit --audit-level=high
+          
+      - name: 🔍 Run CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          languages: javascript
+
+  # ================================
+  # BUILD STAGE
+  # ================================
+  build:
+    name: 🏗️ Build
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+      
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: 🔐 Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: 📝 Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            
+      - name: 🏗️ Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          
+      - name: 📊 Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ steps.meta.outputs.tags }}
+          format: spdx-json
+          output-file: sbom.spdx.json
+          
+      - name: 📊 Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+  # ================================
+  # PERFORMANCE TESTING
+  # ================================
+  performance:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: 📦 Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          
+      - name: 📦 Install dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+        
+      - name: 🏗️ Build application
+        working-directory: ./frontend
+        run: pnpm build
+        
+      - name: 🚀 Start application
+        working-directory: ./frontend
+        run: |
+          pnpm start &
+          sleep 30
+          
+      - name: ⚡ Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+          
+      - name: 📊 Upload Lighthouse results
+        uses: actions/upload-artifact@v3
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+
+  # ================================
+  # DEPLOY TO STAGING
+  # ================================
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [build, performance]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🚀 Deploy to staging
+        run: |
+          echo "Deploying to staging environment..."
+          # Aquí iría la lógica de deployment a staging
+          
+      - name: 🔍 Run smoke tests
+        run: |
+          echo "Running smoke tests..."
+          # Aquí irían los smoke tests
+          
+      - name: 📢 Notify deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # ================================
+  # DEPLOY TO PRODUCTION
+  # ================================
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, performance]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+          
+      - name: 🚀 Deploy to production
+        run: |
+          echo "Deploying to production environment..."
+          # Aquí iría la lógica de deployment a producción
+          
+      - name: 🔍 Run health checks
+        run: |
+          echo "Running health checks..."
+          # Aquí irían los health checks
+          
+      - name: 📢 Notify successful deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          text: '🚀 Production deployment successful!'
+
+  # ================================
+  # RELEASE MANAGEMENT
+  # ================================
+  release:
+    name: 📦 Create Release
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.event_name == 'release'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        
+      - name: 📦 Generate changelog
+        run: |
+          echo "Generating changelog..."
+          # Aquí se generaría el changelog automático
+          
+      - name: 📦 Create release assets
+        run: |
+          echo "Creating release assets..."
+          # Aquí se crearían los assets del release
+          
+      - name: 📢 Notify release
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#releases'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          text: '📦 New release published: ${{ github.event.release.tag_name }}'
+
+  # ================================
+  # CLEANUP
+  # ================================
+  cleanup:
+    name: 🧹 Cleanup
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always()
+    
+    steps:
+      - name: 🧹 Clean up old images
+        run: |
+          echo "Cleaning up old container images..."
+          # Aquí se limpiarían imágenes antiguas del registry

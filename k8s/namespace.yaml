@@ -1,0 +1,74 @@
+# ================================
+# NAMESPACE
+# Sistema de Licencias MPD
+# ================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: licencias-mpd
+  labels:
+    name: licencias-mpd
+    environment: production
+    app: sistema-licencias
+    version: "1.7.0"
+  annotations:
+    description: "Sistema de Gestión de Licencias - Ministerio Público de la Defensa"
+    contact: "sistemas@mpd.gov.ar"
+    
+---
+
+# ================================
+# RESOURCE QUOTA
+# ================================
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: licencias-quota
+  namespace: licencias-mpd
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    
+    # Storage
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    
+    # Objects
+    pods: "20"
+    services: "10"
+    secrets: "20"
+    configmaps: "20"
+    
+---
+
+# ================================
+# LIMIT RANGE
+# ================================
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: licencias-limits
+  namespace: licencias-mpd
+spec:
+  limits:
+  - default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    type: Container
+  - max:
+      cpu: "2"
+      memory: 4Gi
+    min:
+      cpu: 50m
+      memory: 64Mi
+    type: Container

@@ -1,0 +1,222 @@
+/* ===================================
+   COMPONENTES BASE - Sistema Consistente
+   ================================== */
+  
+  /* ===== BOTONES SEMÁNTICOS ===== */
+  .btn-base {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-300;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-success {
+    @apply btn-base bg-success-500/20 text-success-200 border border-success-500/30;
+    @apply hover:bg-success-500/30 hover:border-success-500/40;
+    @apply focus:ring-success-500/50;
+  }
+
+  .btn-danger {
+    @apply btn-base bg-danger-500/20 text-danger-200 border border-danger-500/30;
+    @apply hover:bg-danger-500/30 hover:border-danger-500/40;
+    @apply focus:ring-danger-500/50;
+  }
+
+  .btn-warning {
+    @apply btn-base bg-warning-500/20 text-warning-200 border border-warning-500/30;
+    @apply hover:bg-warning-500/30 hover:border-warning-500/40;
+    @apply focus:ring-warning-500/50;
+  }
+
+  .btn-info {
+    @apply btn-base bg-info-500/20 text-info-200 border border-info-500/30;
+    @apply hover:bg-info-500/30 hover:border-info-500/40;
+    @apply focus:ring-info-500/50;
+  }
+
+  .btn-analytics {
+    @apply btn-base bg-analytics-500/20 text-analytics-200 border border-analytics-500/30;
+    @apply hover:bg-analytics-500/30 hover:border-analytics-500/40;
+    @apply focus:ring-analytics-500/50;
+  }
+
+  .btn-ghost {
+    @apply btn-base bg-white/5 text-white border border-white/10;
+    @apply hover:bg-white/10 hover:border-white/20;
+    @apply focus:ring-white/30;
+  }
+
+  /* ===== CARDS SEMÁNTICAS ===== */
+  .card-base {
+    @apply glass-card p-6 transition-all duration-300;
+  }
+
+  .card-success {
+    @apply card-base border-success-500/30 bg-success-500/10;
+    @apply hover:border-success-500/40 hover:bg-success-500/15;
+  }
+
+  .card-danger {
+    @apply card-base border-danger-500/30 bg-danger-500/10;
+    @apply hover:border-danger-500/40 hover:bg-danger-500/15;
+  }
+
+  .card-warning {
+    @apply card-base border-warning-500/30 bg-warning-500/10;
+    @apply hover:border-warning-500/40 hover:bg-warning-500/15;
+  }
+
+  .card-info {
+    @apply card-base border-info-500/30 bg-info-500/10;
+    @apply hover:border-info-500/40 hover:bg-info-500/15;
+  }
+
+  .card-analytics {
+    @apply card-base border-analytics-500/30 bg-analytics-500/10;
+    @apply hover:border-analytics-500/40 hover:bg-analytics-500/15;
+  }
+
+  /* ===== INPUTS SEMÁNTICOS ===== */
+  .input-base {
+    @apply glass-input w-full transition-all duration-300;
+    @apply focus:ring-2 focus:ring-offset-2;
+  }
+
+  .input-success {
+    @apply input-base border-success-500/30 focus:border-success-500/50;
+    @apply focus:ring-success-500/30;
+  }
+
+  .input-danger {
+    @apply input-base border-danger-500/30 focus:border-danger-500/50;
+    @apply focus:ring-danger-500/30;
+  }
+
+  .input-warning {
+    @apply input-base border-warning-500/30 focus:border-warning-500/50;
+    @apply focus:ring-warning-500/30;
+  }
+
+  .input-info {
+    @apply input-base border-info-500/30 focus:border-info-500/50;
+    @apply focus:ring-info-500/30;
+  }
+
+  /* ===== BADGES CONSISTENTES ===== */
+  .badge-base {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+    @apply transition-colors duration-200;
+  }
+
+  .badge-success {
+    @apply badge-base bg-success-500/20 text-success-200 border border-success-500/30;
+  }
+
+  .badge-danger {
+    @apply badge-base bg-danger-500/20 text-danger-200 border border-danger-500/30;
+  }
+
+  .badge-warning {
+    @apply badge-base bg-warning-500/20 text-warning-200 border border-warning-500/30;
+  }
+
+  .badge-info {
+    @apply badge-base bg-info-500/20 text-info-200 border border-info-500/30;
+  }
+
+  .badge-analytics {
+    @apply badge-base bg-analytics-500/20 text-analytics-200 border border-analytics-500/30;
+  }
+
+  .badge-neutral {
+    @apply badge-base bg-neutral-500/20 text-neutral-300 border border-neutral-500/30;
+  }
+
+  /* ===== ALERTAS CONSISTENTES ===== */
+  .alert-base {
+    @apply glass-card p-4 border-l-4 transition-all duration-300;
+  }
+
+  .alert-success {
+    @apply alert-base border-l-success-500 bg-success-500/10 border-success-500/30;
+  }
+
+  .alert-danger {
+    @apply alert-base border-l-danger-500 bg-danger-500/10 border-danger-500/30;
+  }
+
+  .alert-warning {
+    @apply alert-base border-l-warning-500 bg-warning-500/10 border-warning-500/30;
+  }
+
+  .alert-info {
+    @apply alert-base border-l-info-500 bg-info-500/10 border-info-500/30;
+  }
+
+  /* ===== ACCIONES RÁPIDAS (ya implementadas) ===== */
+  .quick-action-button {
+    @apply glass-card px-4 py-4 text-left transition-all duration-300 ease-out;
+    @apply border-white/10 bg-white/5 hover:bg-white/10;
+    @apply hover:shadow-lg hover:transform hover:-translate-y-0.5;
+    @apply cursor-pointer;
+  }
+
+  .quick-action-button.success-action:hover {
+    @apply border-success-500/40 bg-success-500/10;
+    box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
+  }
+
+  .quick-action-button.info-action:hover {
+    @apply border-info-500/40 bg-info-500/10;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.2);
+  }
+
+  .quick-action-button.analytics-action:hover {
+    @apply border-analytics-500/40 bg-analytics-500/10;
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.2);
+  }
+
+  /* ===== MÉTRICAS CARDS ===== */
+  .metric-card {
+    @apply glass-card p-6 transition-all duration-300;
+    @apply hover:transform hover:-translate-y-1;
+  }
+
+  .metric-card.success {
+    @apply border-success-500/20 bg-success-500/5;
+    @apply hover:border-success-500/30 hover:bg-success-500/10;
+  }
+
+  .metric-card.danger {
+    @apply border-danger-500/20 bg-danger-500/5;
+    @apply hover:border-danger-500/30 hover:bg-danger-500/10;
+  }
+
+  .metric-card.warning {
+    @apply border-warning-500/20 bg-warning-500/5;
+    @apply hover:border-warning-500/30 hover:bg-warning-500/10;
+  }
+
+  .metric-card.info {
+    @apply border-info-500/20 bg-info-500/5;
+    @apply hover:border-info-500/30 hover:bg-info-500/10;
+  }
+
+  .metric-card.analytics {
+    @apply border-analytics-500/20 bg-analytics-500/5;
+    @apply hover:border-analytics-500/30 hover:bg-analytics-500/10;
+  }
+
+  /* ===== ESTADOS DE TEXTO ===== */
+  .text-success { @apply text-success-200; }
+  .text-danger { @apply text-danger-200; }
+  .text-warning { @apply text-warning-200; }
+  .text-info { @apply text-info-200; }
+  .text-analytics { @apply text-analytics-200; }
+  .text-neutral { @apply text-neutral-300; }
+
+  .text-success-muted { @apply text-success-300; }
+  .text-danger-muted { @apply text-danger-300; }
+  .text-warning-muted { @apply text-warning-300; }
+  .text-info-muted { @apply text-info-300; }
+  .text-analytics-muted { @apply text-analytics-300; }
+  .text-neutral-muted { @apply text-neutral-400; }
